@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "提督業はおしまい！",
+  "version": "1.0",
+  "description": "提督業も忙しいが動かなくなったのでついｶｶｯとなってやった",
+  "permissions": [
+    "tabs",
+    "notifications"
+  ],
+  "content_scripts": [
+    {
+      "type": "module",
+      "matches": [
+        "https://play.games.dmm.com/game/kancolle",
+        "*://*.kancolle-server.com/*"
+      ],
+      "js": [
+        "ui.js",
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "xhr_hook_injector.js",
+        "images/mikasa.png"
+      ],
+      "matches": [
+        "*://play.games.dmm.com/*",
+        "*://*.kancolle-server.com/*"
+      ]
+    }
+  ]
+}
