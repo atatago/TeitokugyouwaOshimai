@@ -69,7 +69,7 @@ function createDeckInfo(deck, ships, masterData) {
 
     const fleetHead = `
         <div class="flex-box">
-            <span class="deck-battle" style="${deck.isBattle ? '' : 'display: none;'}">${deck.isBossBattle ? '[ボス戦]' : '[戦闘]'}</span>
+            <span class="deck-battle" style="${deck.isBattle ? '' : 'display: none;'}">${deck.isBossBattle ? '[ボス戦]' : '[戦闘(' + deck.battleCount + ')]'}</span>
             <span class="deck-mission" style="${deck.api_mission[0] !== 1 ? 'display: none;' : ''}">[遠征]</span>
             <span class="deck-charge" style="${!canCharge ? 'display: none;' : ''}">[補給]</span>
             <span>${deck.api_name}</span>

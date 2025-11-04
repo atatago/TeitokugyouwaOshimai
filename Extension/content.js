@@ -14,6 +14,7 @@ class GameData {
     countdownInterval = null;
     isBattle = false;
     isBossBattle = false;
+    battleCount = 0;
 }
 
 // --- 1. XHR/Fetchフック用スクリプトの注入 (全フレームで実行) ---
@@ -329,10 +330,12 @@ if (window.top === window) {
 
                         gameData.isBattle = true;
                         gameData.isBossBattle = false;
+                        gameData.battleCount = 0;
                         //ship_deck のレスポンス形式に合わせて currentDeckData を作る
                         gameData.currentDeckData.filter(r => r.api_id === deckId).map(r => {
                             r.isBattle = gameData.isBattle;
                             r.isBossBattle = gameData.isBossBattle;
+                            r.battleCount = gameData.battleCount;
                         });
 
                         gameData.battleDeckData = {
@@ -344,7 +347,13 @@ if (window.top === window) {
 
                     case 'api_req_sortie/battle':
                         //戦闘
-                        //updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                        gameData.battleCount++;
+                        gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
+                            r.isBattle = gameData.isBattle;
+                            r.isBossBattle = gameData.isBossBattle;
+                            r.battleCount = gameData.battleCount;
+                        });
+                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
                         break;
 
                     case 'api_get_member/ship_deck':
@@ -353,6 +362,7 @@ if (window.top === window) {
                         gameData.battleDeckData.api_deck_data.map(r => {
                             r.isBattle = gameData.isBattle;
                             r.isBossBattle = gameData.isBossBattle;
+                            r.battleCount = gameData.battleCount;
                         });
                         updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
                         break;
@@ -370,6 +380,7 @@ if (window.top === window) {
                         gameData.battleDeckData.api_deck_data.filter(r => r.isBattle !== undefined).map(r => {
                             r.isBattle = gameData.isBattle;
                             r.isBossBattle = gameData.isBossBattle;
+                            r.battleCount = gameData.battleCount;
                         });
                         updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
                         break;
