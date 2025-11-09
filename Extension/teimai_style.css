@@ -1,0 +1,106 @@
+.main-frame {
+    position: fixed;
+    background-color:rgba(0,0,0,0.8); 
+    color:white; 
+    padding:10px 15px 15px 15px; 
+    border-radius:8px; 
+    font-size:16px; 
+    width: 1200px; /* ゲーム画面の幅に合わせる */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: left;
+    z-index: 9999;
+    inset: 0;
+    top: 821px; /* 仮の初期位置 */
+    margin: auto;
+}
+
+.float-box {
+    float: left;
+}
+.flex-box {
+    display: flex;
+}
+.display-box {
+    padding: 0.1em;
+    margin-bottom: 0.5em;
+}
+.simple-list{
+    list-style: none;
+    padding-left: 1em;
+    margin: 0;
+}
+
+.quest-title { /* 任務 */
+    font-size: smaller;
+}
+.quest-progress50 {
+    background-color: #1ddd1d;
+    padding: 0 0.2em;
+}
+.quest-progress80 {
+    background-color: #1d991d;
+    padding: 0 0.2em;
+}
+.quest-complete {
+    background-color: #00bfff;
+    padding: 0 0.2em;
+}
+
+.deck-box { /* 艦隊ボックス */
+    width: 14em;
+    margin-right: 0.3em;
+}
+.ship-box { /* 艦ボックス */
+    border: 0.1em solid #555;
+    padding: 0.3em;
+    margin-bottom: 0.2em;
+    border-radius: 0.2em;
+}
+.ship-info { /* 艦情報 */
+    display: flex;
+    font-weight: bold;
+    margin-bottom: 0.1em;
+    color: #fff;
+}
+.deck-battle{
+    background-color: #ff0000;
+    padding: 0 0.2em;
+}
+.deck-mission{
+    background-color: #00bfff;
+    padding: 0 0.2em;
+}
+.deck-charge{
+    background-color: #D2691E;
+    padding: 0 0.2em;
+}
+.ship-name { /* 艦名 */
+    width: 16em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ship-cond { /* コンディション */
+    display: inline-block;
+    font-size: medium;
+    width: 5em;
+}
+.ship-lv {
+    display: inline-block;
+    font-size: small;
+    margin-right: auto;
+}
+.ship-hp {
+    display: inline-block;
+    font-size: smaller;
+}
+.ship-hp-bar-box {
+    height: 0.3em;
+    background-color: #333;
+    border-radius: 0.2em;
+}
+.ship-hp-bar {
+    height: 100%;
+    border-radius: 0.2em;
+}

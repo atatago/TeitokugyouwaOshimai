@@ -1,3 +1,39 @@
+function getMainFrame() {
+    return `
+        <div style="display: flex;">
+            <div id="display-fleet-info" class="display-box float-box">
+                <div><strong>🚢 編成:</strong></div>
+                <div id="fleet-info-list">
+                    <li>データ受信待ち...</li>
+                </div>
+            </div>
+            
+            <div class="float-box">
+                <div id="display-mission" class="display-box">
+                    <div><strong>🗺️ 遠征艦隊:</strong></div>
+                    <ul id="mission-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+
+                <div id="display-nyukyo" class="display-box">
+                    <div><strong>🛠️ 入渠ドック:</strong></div>
+                    <ul id="nyukyo-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+
+                <div id="quest-box" class="display-box">
+                    <div><strong>📋 任務:</strong></div>
+                    <ul id="quest-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 /**
  * 時間フォーマット
  * @param {*} totalSeconds 

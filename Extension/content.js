@@ -42,154 +42,26 @@ function setupDisplayArea() {
 
         console.log('[Content Script] Setting up UI Display Area.');
 
+        const styleTag = document.createElement('style');
+        const cssUrl = chrome.runtime.getURL('teimai_style.css');
+        fetch(cssUrl).then(response => {
+            response.text()
+                .then(text => {
+                    styleTag.innerHTML = text;
+                });
+        });
+        document.body.appendChild(styleTag);
+
         const displayArea = document.createElement('div');
         displayArea.id = mainDisplayId;
+        displayArea.className = "main-frame";
 
         // Canvasの相対位置を計算
         const gameFrame = document.querySelector('iframe[id="game_frame"]');
         let topPosition = '10px';
         let rightPosition = '10px';
 
-        displayArea.style.cssText = `
-            position: fixed; /* スクロール追従のために固定 */
-            background-color:rgba(0,0,0,0.8); 
-            color:white; 
-            padding:15px; 
-            border-radius:8px; 
-            font-size:16px; 
-            width: 1200px; /* ゲーム画面の幅に合わせる */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: left;
-            z-index: 9999; /* 最前面に表示 */
-            inset: 0;
-            top: 821px; /* 仮の初期位置 */
-            margin: auto;
-        `;
-
-        displayArea.innerHTML = `
-            <style>
-                .float-box {
-                    float: left;
-                }
-                .flex-box {
-                    display: flex;
-                }
-                .display-box {
-                    padding: 0.1em;
-                    margin-bottom: 0.5em;
-                }
-                .simple-list{
-                    list-style: none;
-                    padding-left: 1em;
-                    margin: 0;
-                }
-                .quest-title { /* 任務 */
-                    font-size: smaller;
-                }
-                .quest-progress50 {
-                    background-color: #1ddd1d;
-                    padding: 0 0.2em;
-                }
-                .quest-progress80 {
-                    background-color: #1d991d;
-                    padding: 0 0.2em;
-                }
-                .quest-complete {
-                    background-color: #00bfff;
-                    padding: 0 0.2em;
-                }
-                .deck-box { /* 艦隊ボックス */
-                    width: 14em;
-                    margin-right: 0.3em;
-                }
-                .ship-box { /* 艦ボックス */
-                    border: 0.1em solid #555;
-                    padding: 0.3em;
-                    margin-bottom: 0.2em;
-                    border-radius: 0.2em;
-                }
-                .ship-info { /* 艦情報 */
-                    display: flex;
-                    font-weight: bold;
-                    margin-bottom: 0.1em;
-                    color: #fff;
-                }
-                .deck-battle{
-                    background-color: #ff0000;
-                    padding: 0 0.2em;
-                }
-                .deck-mission{
-                    background-color: #00bfff;
-                    padding: 0 0.2em;
-                }
-                .deck-charge{
-                    background-color: #D2691E;
-                    padding: 0 0.2em;
-                }
-                .ship-name { /* 艦名 */
-                    width: 16em;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .ship-cond { /* コンディション */
-                    display: inline-block;
-                    font-size: medium;
-                    width: 5em;
-                }
-                .ship-lv {
-                    display: inline-block;
-                    font-size: small;
-                    margin-right: auto;
-                }
-                .ship-hp {
-                    display: inline-block;
-                    font-size: smaller;
-                }
-                .ship-hp-bar-box {
-                    height: 0.3em;
-                    background-color: #333;
-                    border-radius: 0.2em;
-                }
-                .ship-hp-bar {
-                    height: 100%;
-                    border-radius: 0.2em;
-                }
-            </style>
-
-            <div style="display: flex;">
-                <div id="display-fleet-info" class="display-box float-box">
-                    <div><strong>🚢 編成:</strong></div>
-                    <div id="fleet-info-list">
-                        <li>データ受信待ち...</li>
-                    </div>
-                </div>
-                
-                <div class="float-box">
-                    <div id="display-mission" class="display-box">
-                        <div><strong>🗺️ 遠征艦隊:</strong></div>
-                        <ul id="mission-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-
-                    <div id="display-nyukyo" class="display-box">
-                        <div><strong>🛠️ 入渠ドック:</strong></div>
-                        <ul id="nyukyo-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-
-                    <div id="quest-box" class="display-box">
-                        <div><strong>📋 任務:</strong></div>
-                        <ul id="quest-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
+        displayArea.innerHTML = getMainFrame();
         document.body.appendChild(displayArea);
 
         window.addEventListener('scroll', updateDisplayPosition);
@@ -237,14 +109,12 @@ function updateDisplayPosition() {
     const rect = gameFrame.getBoundingClientRect();
 
     // 画面下端からの距離を計算
-    let topPosition = rect.bottom - 125;
+    let topPosition = rect.bottom - 230;
 
     // 画面上端にUIが隠れるのを防ぐ処理
     if (topPosition < 10) {
         topPosition = 10; // 画面上端に固定
     }
-
-    // CSSを適用
     displayArea.style.top = `${topPosition}px`;
 }
 

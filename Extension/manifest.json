@@ -27,6 +27,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "teimai_style.css",
         "xhr_hook_injector.js",
         "images/mikasa.png"
       ],
