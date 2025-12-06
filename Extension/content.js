@@ -144,150 +144,152 @@ if (window.top === window) {
 
     // chrome.runtimeからのメッセージを受信
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "API_DATA_RECEIVED") {
-            const apiData = request.data;
-            const gameData = new GameData();
+        switch (request.action) {
+            case "API_DATA_RECEIVED":
+                const apiData = request.data;
+                const gameData = new GameData();
 
-            // UIの存在を待ってからデータ処理
-            setupDisplayArea().then(() => {
-                switch (apiData.path) {
-                    case 'api_start2/get_option_setting':
-                        updateDisplayPosition();
-                        break;
+                // UIの存在を待ってからデータ処理
+                setupDisplayArea().then(() => {
+                    switch (apiData.path) {
+                        case 'api_start2/get_option_setting':
+                            updateDisplayPosition();
+                            break;
 
-                    case 'api_start2/getData':
-                        // マスターデータ取得
-                        gameData.masterData = apiData.data.api_data;
-                        break;
+                        case 'api_start2/getData':
+                            // マスターデータ取得
+                            gameData.masterData = apiData.data.api_data;
+                            break;
 
-                    case 'api_port/port':
-                        // 艦隊情報取得
-                        port = apiData.data;
+                        case 'api_port/port':
+                            // 艦隊情報取得
+                            port = apiData.data;
 
-                        gameData.currentDeckData = port.api_data.api_deck_port;          //艦隊情報
-                        gameData.currentShipData = port.api_data.api_ship;               //艦情報
-                        gameData.currentNyukyoData = port.api_data.api_ndock;            //入渠情報
+                            gameData.currentDeckData = port.api_data.api_deck_port;          //艦隊情報
+                            gameData.currentShipData = port.api_data.api_ship;               //艦情報
+                            gameData.currentNyukyoData = port.api_data.api_ndock;            //入渠情報
 
-                        updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
-                        updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
-                        updateMissionUI(gameData.currentDeckData);
-                        break;
+                            updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
+                            updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
+                            updateMissionUI(gameData.currentDeckData);
+                            break;
 
-                    case 'api_req_hensei/change':
-                        // 編成変更
-                        henseiChange(port, apiData);
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
+                        case 'api_req_hensei/change':
+                            // 編成変更
+                            henseiChange(port, apiData);
+                            updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            break;
 
-                    case 'api_req_hensei/preset_select':
-                        // プリセット展開
-                        const deckIndex = port.api_data.api_deck_port.findIndex(r => r.api_id === apiData.data.api_data.api_id);
-                        port.api_data.api_deck_port[deckIndex].api_ship = apiData.data.api_data.api_ship;
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
+                        case 'api_req_hensei/preset_select':
+                            // プリセット展開
+                            const deckIndex = port.api_data.api_deck_port.findIndex(r => r.api_id === apiData.data.api_data.api_id);
+                            port.api_data.api_deck_port[deckIndex].api_ship = apiData.data.api_data.api_ship;
+                            updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/deck':
-                        //遠征
-                        gameData.currentDeckData = apiData.data.api_data;
-                        updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
-                        updateMissionUI(gameData.currentDeckData);
-                        break;
+                        case 'api_get_member/deck':
+                            //遠征
+                            gameData.currentDeckData = apiData.data.api_data;
+                            updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
+                            updateMissionUI(gameData.currentDeckData);
+                            break;
 
-                    case 'api_req_map/start':
-                        //戦闘
-                        const bp = paramToDict(apiData.requestBody);
-                        const deckId = parseInt(bp['api_deck_id']);
+                        case 'api_req_map/start':
+                            //戦闘
+                            const bp = paramToDict(apiData.requestBody);
+                            const deckId = parseInt(bp['api_deck_id']);
 
-                        gameData.isBattle = true;
-                        gameData.isBossBattle = false;
-                        gameData.battleCount = 0;
-                        //ship_deck のレスポンス形式に合わせて currentDeckData を作る
-                        gameData.currentDeckData.filter(r => r.api_id === deckId).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-
-                        gameData.battleDeckData = {
-                            "api_deck_data": gameData.currentDeckData,
-                            "api_ship_data": gameData.currentShipData,
-                        };
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_req_sortie/battle':
-                        //戦闘
-                        gameData.battleCount++;
-                        gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_get_member/ship_deck':
-                        //戦闘
-                        gameData.battleDeckData = apiData.data.api_data;
-                        gameData.battleDeckData.api_deck_data.map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_req_map/next':
-                        //戦闘
-                        if (apiData.data.api_data.api_bosscell_no === apiData.data.api_data.api_no) {
-                            gameData.isBattle = true;
-                            gameData.isBossBattle = true;
-                        } else {
                             gameData.isBattle = true;
                             gameData.isBossBattle = false;
-                        }
+                            gameData.battleCount = 0;
+                            //ship_deck のレスポンス形式に合わせて currentDeckData を作る
+                            gameData.currentDeckData.filter(r => r.api_id === deckId).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
 
-                        gameData.battleDeckData.api_deck_data.filter(r => r.isBattle !== undefined).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
+                            gameData.battleDeckData = {
+                                "api_deck_data": gameData.currentDeckData,
+                                "api_ship_data": gameData.currentShipData,
+                            };
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/questlist':
-                        //任務
-                        updateQuestList(apiData);
-                        break;
+                        case 'api_req_sortie/battle':
+                            //戦闘
+                            gameData.battleCount++;
+                            gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/ndock':
-                        //入渠
-                        gameData.currentNyukyoData = apiData.data.api_data;
-                        updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
-                        break;
+                        case 'api_get_member/ship_deck':
+                            //戦闘
+                            gameData.battleDeckData = apiData.data.api_data;
+                            gameData.battleDeckData.api_deck_data.map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_req_nyukyo/start':
-                        //入渠
-                        const p = paramToDict(apiData.requestBody);
-                        if (p['api_highspeed'] === '1') {
-                            //バケツ使用
-                            const s = port.api_data.api_ship.filter(r => r.api_id === parseInt(p['api_ship_id']))[0];
-                            s.api_nowhp = s.api_maxhp;
+                        case 'api_req_map/next':
+                            //戦闘
+                            if (apiData.data.api_data.api_bosscell_no === apiData.data.api_data.api_no) {
+                                gameData.isBattle = true;
+                                gameData.isBossBattle = true;
+                            } else {
+                                gameData.isBattle = true;
+                                gameData.isBossBattle = false;
+                            }
+
+                            gameData.battleDeckData.api_deck_data.filter(r => r.isBattle !== undefined).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
+
+                        case 'api_get_member/questlist':
+                            //任務
+                            updateQuestList(apiData);
+                            break;
+
+                        case 'api_get_member/ndock':
+                            //入渠
+                            gameData.currentNyukyoData = apiData.data.api_data;
+                            updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
+                            break;
+
+                        case 'api_req_nyukyo/start':
+                            //入渠
+                            const p = paramToDict(apiData.requestBody);
+                            if (p['api_highspeed'] === '1') {
+                                //バケツ使用
+                                const s = port.api_data.api_ship.filter(r => r.api_id === parseInt(p['api_ship_id']))[0];
+                                s.api_nowhp = s.api_maxhp;
+                                updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            }
+                            break;
+
+                        case 'api_req_hokyu/charge':
+                            //補給
+                            apiData.data.api_data.api_ship.forEach(charge => {
+                                const s = port.api_data.api_ship.filter(r => r.api_id === charge.api_id)[0];
+                                s.api_bull = charge.api_bull;
+                                s.api_fuel = charge.api_fuel;
+                            });
                             updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        }
-                        break;
-
-                    case 'api_req_hokyu/charge':
-                        //補給
-                        apiData.data.api_data.api_ship.forEach(charge => {
-                            const s = port.api_data.api_ship.filter(r => r.api_id === charge.api_id)[0];
-                            s.api_bull = charge.api_bull;
-                            s.api_fuel = charge.api_fuel;
-                        });
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
-                }
-            });
+                            break;
+                    }
+                });
+                break;
         }
     });
 }
