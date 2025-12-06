@@ -63,9 +63,7 @@ function setupDisplayArea() {
 
         displayArea.innerHTML = getMainFrame();
         document.body.appendChild(displayArea);
-
-        window.addEventListener('scroll', updateDisplayPosition);
-        window.addEventListener('resize', updateDisplayPosition);
+        settingEvents();
 
         // 子要素 (nyukyo-list) の存在をポーリングで保証する
         const checkChildElements = () => {
@@ -429,4 +427,9 @@ function paramToDict(params) {
         dict[key] = value;
     });
     return dict;
+}
+
+function settingEvents() {
+    window.addEventListener('scroll', updateDisplayPosition);
+    window.addEventListener('resize', updateDisplayPosition);
 }
