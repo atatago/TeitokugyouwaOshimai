@@ -320,9 +320,9 @@ function updateNyukyoUI(ndocks, ships, masterData) {
                 const name = masterData.api_mst_ship.filter(s => s.api_id === ship.api_ship_id)[0].api_name;
 
                 if (remainingSeconds === 0) {
-                    html += `<li style="color: #4CAF50;">[${dock.api_id} : ✅ 完了！] : ${name}</li>`;
+                    html += `<li class="nyukyo" style="color: #4CAF50;">[${dock.api_id} : ✅ 完了！] : ${name}</li>`;
                 } else {
-                    html += `<li>[${dock.api_id} : ${remainingTimeStr}] : ${name}</li>`;
+                    html += `<li class="nyukyo">[${dock.api_id} : ${remainingTimeStr}] : ${name}</li>`;
                 }
                 break;
         }
@@ -359,9 +359,9 @@ function updateMissionUI(decks) {
                     sendMessage(title, message);
                     deck.api_mission[3] = 1;
                 }
-                html += `<li style="color: #4CAF50;">[${deck.api_id} : --:--:--]: ✅ 帰投！</li>`;
+                html += `<li class="mission" style="color: #4CAF50;">[${deck.api_id} : --:--:--]: ✅ 帰投！</li>`;
             } else {
-                html += `<li>[${deck.api_id} : ${remainingTimeStr}] : ⏳ ${deck.api_name}</li>`;
+                html += `<li class="mission">[${deck.api_id} : ${remainingTimeStr}] : ⏳ ${deck.api_name}</li>`;
             }
         } else {
             deck.api_mission[3] = 0;    //通知フラグ

@@ -1,6 +1,6 @@
 .main-frame {
     position: fixed;
-    background-color:rgba(0,0,0,0.8); 
+    background-color:rgba(0, 0, 0, 0.8); 
     color:white; 
     padding:10px 15px 15px 15px; 
     border-radius:8px; 
@@ -103,4 +103,16 @@
 .ship-hp-bar {
     height: 100%;
     border-radius: 0.2em;
+}
+.nyukyo {
+    width: 14em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mission {
+    width: 14em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
