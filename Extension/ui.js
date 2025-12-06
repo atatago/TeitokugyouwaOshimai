@@ -10,7 +10,6 @@ function getMainFrame() {
             
             <div class="float-box">
                 <div>
-                    <button class="func-button" title="履歴クリア" id="clearHistoryButton">🗑️</button>
                     <button class="func-button" title="サウンド" id="muteButton">🔊</button>
                     <button class="func-button" title="スクリーンショット" id="screenshotButton">📷</button>
                 </div>

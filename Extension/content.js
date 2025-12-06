@@ -116,6 +116,22 @@ function updateDisplayPosition() {
     displayArea.style.top = `${topPosition}px`;
 }
 
+// 履歴操作の無効化（戻るを連打されると死ぬ）
+window.addEventListener('load', function() {
+    window.history.pushState(
+        { blocked: true }, 
+        document.title, 
+        window.location.href
+    );
+}, false);
+window.addEventListener('popstate', function(event) {
+    window.history.pushState(
+        { blocked: true }, 
+        document.title, 
+        window.location.href
+    );
+}, false);
+
 // 全フレームで実行されるメッセージリスナー ---
 // データ通信を行っているformは別オリジンなのでChromeの通信機能を使ってデータ送信する
 window.addEventListener("message", (event) => {
@@ -437,8 +453,6 @@ function settingEvents() {
     if(muteButton) muteButton.addEventListener('click', changeMute);
     const screenshotButton = document.getElementById('screenshotButton');
     if(screenshotButton) screenshotButton.addEventListener('click', screenshot);
-    const clearHistoryButton = document.getElementById('clearHistoryButton');
-    if(clearHistoryButton) clearHistoryButton.addEventListener('click', clearHistory);
 }
 
 function changeMute() {
@@ -447,8 +461,4 @@ function changeMute() {
 
 function screenshot() {
     chrome.runtime.sendMessage({ action: "SCREENSHOT" });
-}
-
-function clearHistory() {
-    chrome.runtime.sendMessage({ action: "CLEAR_HISTORY" });
 }
