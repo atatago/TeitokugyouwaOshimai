@@ -15,6 +15,36 @@ function sendNotification(title, message) {
     });
 }
 
+/**
+ * ミュート状態変更
+ */
+function changeMuteCondition () {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        const currentTab = tabs[0];
+        
+        chrome.tabs.get(currentTab.id, function(tab) {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+                return;
+            } else {
+                chrome.tabs.update(tab.id, { muted: !tab.mutedInfo.muted }, function() {
+                    if (chrome.runtime.lastError) {
+                        console.error(chrome.runtime.lastError.message);
+                    } else {
+                        const data = {
+                             action: "MUTE_STATUS_CHANGED",
+                             muted: !tab.mutedInfo.muted,
+                        };
+                        //chrome.runtime.sendMessage(data);
+                        chrome.tabs.sendMessage(tab.id, data, { frameId: 0 })
+                            .catch(e => console.info(e));
+                    }
+                });
+            }
+        });
+    });
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 1. 子フレームの content.js から API データを受信したか確認
     switch (request.action) {
@@ -37,6 +67,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             break;
         case "SEND_NOTIFICATION":
             sendNotification(request.title, request.message);
+            break;
+        case "CHANGE_MUTE_TAB":
+            changeMuteCondition();
             break;
     }
 });
