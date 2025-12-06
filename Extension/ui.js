@@ -9,6 +9,12 @@ function getMainFrame() {
             </div>
             
             <div class="float-box">
+                <div>
+                    <button class="func-button" title="履歴クリア" id="clearHistoryButton">🗑️</button>
+                    <button class="func-button" title="サウンド" id="muteButton">🔊</button>
+                    <button class="func-button" title="スクリーンショット" id="screenshotButton">📷</button>
+                </div>
+
                 <div id="display-mission" class="display-box">
                     <div><strong>🗺️ 遠征艦隊:</strong></div>
                     <ul id="mission-list" class="simple-list">

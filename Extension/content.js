@@ -432,4 +432,23 @@ function paramToDict(params) {
 function settingEvents() {
     window.addEventListener('scroll', updateDisplayPosition);
     window.addEventListener('resize', updateDisplayPosition);
+
+    const muteButton = document.getElementById('muteButton');
+    if(muteButton) muteButton.addEventListener('click', changeMute);
+    const screenshotButton = document.getElementById('screenshotButton');
+    if(screenshotButton) screenshotButton.addEventListener('click', screenshot);
+    const clearHistoryButton = document.getElementById('clearHistoryButton');
+    if(clearHistoryButton) clearHistoryButton.addEventListener('click', clearHistory);
+}
+
+function changeMute() {
+    chrome.runtime.sendMessage({ action: "CHANGE_MUTE_TAB" });
+}
+
+function screenshot() {
+    chrome.runtime.sendMessage({ action: "SCREENSHOT" });
+}
+
+function clearHistory() {
+    chrome.runtime.sendMessage({ action: "CLEAR_HISTORY" });
 }

@@ -116,3 +116,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.func-button {
+    width: 3.3em;
+    height: 3.3em;
+    font-size: x-large;
+    border: #D2691E;
+    border-width: 3px;
+    border-radius: 1em;
+    border-style: solid;
+    background-color: rgba(0, 0, 0, 0);
+}
+.func-button:hover {
+    background-color: #f09e05aa;
+}
