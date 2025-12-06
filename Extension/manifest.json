@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "提督業はおしまい！",
   "version": "1.0",
-  "description": "提督業も忙しいが動かなくなったのでついｶｶｯとなってやった",
+  "description": "艦これの情報表示拡張",
   "permissions": [
     "tabs",
     "notifications"
