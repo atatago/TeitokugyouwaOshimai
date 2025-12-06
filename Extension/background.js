@@ -17,24 +17,26 @@ function sendNotification(title, message) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 1. 子フレームの content.js から API データを受信したか確認
-    if (request.action === "API_DATA_RECEIVED") {
+    switch (request.action) {
+        case "API_DATA_RECEIVED":
+            // メッセージを送信したタブ (sender.tab) の ID を取得
+            const tabId = sender.tab.id;
+            const path = request.data.path;
+            const requestBody = request.data.requestBody;
 
-        // 2. メッセージを送信したタブ (sender.tab) の ID を取得
-        const tabId = sender.tab.id;
-        const path = request.data.path;
-        const requestBody = request.data.requestBody;
+            if (tabId) {
+                // 3. そのタブの親フレーム (tabId, frameId: 0) にメッセージを再送
+                // frameId: 0 は常にメインウィンドウ (親フレーム) を指します。
+                chrome.tabs.sendMessage(tabId, request, { frameId: 0 })
+                    .catch(e => console.info(e));
+            }
 
-        if (tabId) {
-            // 3. そのタブの親フレーム (tabId, frameId: 0) にメッセージを再送
-            // frameId: 0 は常にメインウィンドウ (親フレーム) を指します。
-            chrome.tabs.sendMessage(tabId, request, { frameId: 0 })
-                .catch(e => console.info(e)/*console.error("Error forwarding message to main frame:", e)*/);
-        }
-
-        if (path.includes('api_req_hensei/change')) {
-            const params = new URLSearchParams(requestBody);
-        }
-    } else if (request.action === "SEND_NOTIFICATION") {
-        sendNotification(request.title, request.message);
+            if (path.includes('api_req_hensei/change')) {
+                const params = new URLSearchParams(requestBody);
+            }
+            break;
+        case "SEND_NOTIFICATION":
+            sendNotification(request.title, request.message);
+            break;
     }
 });
