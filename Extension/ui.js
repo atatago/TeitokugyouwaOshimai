@@ -193,7 +193,7 @@ function updateQuestList(questData) {
                             r.api_category === 5 ? '#FFFF00' :  //補給
                                 r.api_category === 6 ? '#D2691E' :  //工廠
                                     r.api_category === 7 ? '#dda0dd' :  //改装
-                                        r.api_category === 8 ? '#000000' :  //？？？？
+                                        r.api_category === 8 ? '#FF0000' :  //戦闘
                                             r.api_category === 9 ? '#FF0000' :  //戦闘
                                                 r.api_category === 10 ? '#FF0000' : //戦闘
                                                     r.api_category === 11 ? '#D2691E' : //工廠
