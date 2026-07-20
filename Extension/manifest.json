@@ -3,8 +3,13 @@
   "name": "提督業はおしまい！",
   "version": "1.0",
   "description": "艦これの情報表示拡張",
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "permissions": [
     "tabs",
+    "activeTab",
+    "downloads",
     "notifications"
   ],
   "content_scripts": [
