@@ -16,9 +16,9 @@ function sendInternalMessage(data) {
 
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function(body) {
-        this.addEventListener('readystatechange', () => {
         this._requestBody = body ? body.toString() : '';
 
+        const handleReadyStateChange = () => {
             if (this.readyState === 4 && this.status === 200) {
                 if (this._url && this._url.includes('/kcsapi/')) {
                     try {
@@ -37,8 +37,9 @@ function sendInternalMessage(data) {
                     }
                 }
             }
-        });
+        };
 
+        this.addEventListener('readystatechange', handleReadyStateChange);
         originalSend.apply(this, arguments);
     };
 })();
