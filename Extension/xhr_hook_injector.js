@@ -16,12 +16,11 @@ function sendInternalMessage(data) {
 
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function(body) {
-        this._requestBody = body ? body.toString() : ''; 
-        
-        this.addEventListener('readystatechange', () => {
+        this._requestBody = body ? body.toString() : '';
+
+        const handleReadyStateChange = () => {
             if (this.readyState === 4 && this.status === 200) {
                 if (this._url && this._url.includes('/kcsapi/')) {
-                    
                     try {
                         const responseText = this.responseText.replace(/^svdata=/, '');
                         const responseJSON = JSON.parse(responseText);
@@ -38,8 +37,9 @@ function sendInternalMessage(data) {
                     }
                 }
             }
-        });
-        // オリジナルのsendを実行
+        };
+
+        this.addEventListener('readystatechange', handleReadyStateChange);
         originalSend.apply(this, arguments);
     };
 })();

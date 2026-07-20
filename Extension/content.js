@@ -23,32 +23,33 @@ script.src = chrome.runtime.getURL('xhr_hook_injector.js');
 script.onload = function () { this.remove(); };
 (document.head || document.documentElement).appendChild(script);
 
+let displayReadyPromise = null;
+let eventsAttached = false;
+
 // --- 3. UIセットアップとDOMロード待機 ---
 function setupDisplayArea() {
-    return new Promise(resolve => {
-        const mainDisplayId = 'kancolle-info-display';
+    if (displayReadyPromise) {
+        return displayReadyPromise;
+    }
 
-        // bodyが存在しない場合は、DOMContentLoadedを待つ
-        if (!document.body) {
-            document.addEventListener('DOMContentLoaded', () => resolve(setupDisplayArea()), { once: true });
-            return;
-        }
+    const mainDisplayId = 'kancolle-info-display';
+    let resolveReady;
+    displayReadyPromise = new Promise(resolve => {
+        resolveReady = resolve;
+    });
 
-        // 既にUIがセットアップ済みかチェック
+    const initializeUI = () => {
         if (document.getElementById(mainDisplayId)) {
             startCountdown();
-            return resolve();
+            return resolveReady();
         }
 
         console.log('[Content Script] Setting up UI Display Area.');
 
         const styleTag = document.createElement('style');
         const cssUrl = chrome.runtime.getURL('teimai_style.css');
-        fetch(cssUrl).then(response => {
-            response.text()
-                .then(text => {
-                    styleTag.innerHTML = text;
-                });
+        fetch(cssUrl).then(response => response.text()).then(text => {
+            styleTag.innerHTML = text;
         });
         document.body.appendChild(styleTag);
 
@@ -56,27 +57,29 @@ function setupDisplayArea() {
         displayArea.id = mainDisplayId;
         displayArea.className = "main-frame";
 
-        // Canvasの相対位置を計算
-        const gameFrame = document.querySelector('iframe[id="game_frame"]');
-        let topPosition = '10px';
-        let rightPosition = '10px';
-
         displayArea.innerHTML = getMainFrame();
         document.body.appendChild(displayArea);
         settingEvents();
 
-        // 子要素 (nyukyo-list) の存在をポーリングで保証する
         const checkChildElements = () => {
             if (document.getElementById('nyukyo-list')) {
                 console.log('[Content Script] UI fully rendered. Starting countdown.');
                 startCountdown();
-                resolve(); // 子要素が見つかったら解決
+                resolveReady();
             } else {
                 setTimeout(checkChildElements, 25);
             }
         };
         checkChildElements();
-    });
+    };
+
+    if (!document.body) {
+        document.addEventListener('DOMContentLoaded', initializeUI, { once: true });
+    } else {
+        initializeUI();
+    }
+
+    return displayReadyPromise;
 }
 
 // --- 4. リアルタイムカウントダウンの処理 ---
@@ -144,7 +147,7 @@ window.addEventListener("message", (event) => {
     const dataToTransfer = {
         action: "API_DATA_RECEIVED",
         data: event.data,
-        requestBody: event.requestBody
+        requestBody: event.data.requestBody
     };
 
     chrome.runtime.sendMessage(dataToTransfer);
@@ -168,6 +171,7 @@ if (window.top === window) {
                     switch (apiData.path) {
                         case 'api_start2/get_option_setting':
                             updateDisplayPosition();
+                            chrome.runtime.sendMessage({ action: "CHANGE_MUTE_TAB" });
                             break;
 
                         case 'api_start2/getData':
@@ -176,6 +180,7 @@ if (window.top === window) {
                             break;
 
                         case 'api_port/port':
+                            console.info("api_port/port : " + "JSON.stringify(apiData.data)");
                             // 艦隊情報取得
                             port = apiData.data;
 
@@ -231,6 +236,15 @@ if (window.top === window) {
                             break;
 
                         case 'api_req_sortie/battle':
+                        case 'api_req_sortie/airbattle':
+                        case 'api_req_sortie/ld_airbattle':
+                        case 'api_req_sortie/battle_water':
+                        case 'api_req_battle_midnight/sp_midnight':
+                        case 'api_req_combined_battle/battle':
+                        case 'api_req_combined_battle/airbattle':
+                        case 'api_req_combined_battle/ld_airbattle':
+                        case 'api_req_combined_battle/battle_water':
+                        case 'api_req_combined_battle/ec_battle':
                             //戦闘
                             gameData.battleCount++;
                             gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
@@ -303,6 +317,24 @@ if (window.top === window) {
                             break;
                     }
                 });
+                break;
+            case "MUTE_STATUS_CHANGED":
+                const muteButton = document.getElementById('muteButton');
+                console.log(`[Content Script] Mute status received: ${request.muted}`);
+                if (muteButton) {
+                    muteButton.textContent = request.muted ? "🔇" : "🔊";
+                }
+                break;
+
+            case "CLOP_IMAGE":
+                cropScreenshot(request.imageUrl)
+                    .then(newImageUrl => {
+                        chrome.runtime.sendMessage({ action: 'IMAGE_DOWNLOAD', imageUrl: newImageUrl });
+                    })
+                    .catch(error => {
+                        console.error('Screenshot crop failed:', error);
+                        chrome.runtime.sendMessage({ action: 'IMAGE_DOWNLOAD', imageUrl: request.imageUrl });
+                    });
                 break;
         }
     });
@@ -445,20 +477,95 @@ function paramToDict(params) {
     return dict;
 }
 
+/**
+ * スクリーンショット
+ */
+function downloadScreenshot() {
+    chrome.runtime.sendMessage({ action: "SCREENSHOT_DOWNLOAD" });
+}
+
+async function cropScreenshot(imageUrl) {
+    const gameFrame = document.getElementById('game_frame');
+    if (!gameFrame) {
+        throw new Error('game_frame element not found');
+    }
+
+    const rect = gameFrame.getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.src = imageUrl;
+
+    return new Promise((resolve, reject) => {
+        img.onload = () => {
+            try {
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const scaleX = img.naturalWidth / viewportWidth;
+                const scale = scaleX; // 幅が正しいため、横スケールを基準にする。
+                const fixedGameHeight = 720;
+                const sx = Math.round(rect.left * scale);
+                const sy = Math.round(rect.top * scale);
+                const sWidth = Math.round(rect.width * scale);
+                const sHeight = Math.round(fixedGameHeight * scale);
+
+                console.log('[Screenshot] game_frame rect:', {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                    fixedGameHeight,
+                });
+                console.log('[Screenshot] viewport:', {
+                    innerWidth: viewportWidth,
+                    innerHeight: viewportHeight,
+                    visualViewportWidth: window.visualViewport?.width,
+                    visualViewportHeight: window.visualViewport?.height,
+                });
+                console.log('[Screenshot] image natural:', {
+                    naturalWidth: img.naturalWidth,
+                    naturalHeight: img.naturalHeight,
+                });
+                console.log('[Screenshot] scale:', {
+                    scaleX,
+                    usedScale: scale,
+                    sx,
+                    sy,
+                    sWidth,
+                    sHeight,
+                });
+
+                canvas.width = sWidth;
+                canvas.height = sHeight;
+
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+                resolve(canvas.toDataURL('image/png'));
+            } catch (error) {
+                reject(error);
+            }
+        };
+        img.onerror = () => reject(new Error('Failed to load screenshot image.'));
+    });
+}
+
 function settingEvents() {
+    if (eventsAttached) {
+        return;
+    }
+
     window.addEventListener('scroll', updateDisplayPosition);
     window.addEventListener('resize', updateDisplayPosition);
 
     const muteButton = document.getElementById('muteButton');
-    if(muteButton) muteButton.addEventListener('click', changeMute);
+    if (muteButton) muteButton.addEventListener('click', changeMute);
     const screenshotButton = document.getElementById('screenshotButton');
-    if(screenshotButton) screenshotButton.addEventListener('click', screenshot);
+    if (screenshotButton) screenshotButton.addEventListener('click', downloadScreenshot);
+
+    eventsAttached = true;
 }
 
 function changeMute() {
     chrome.runtime.sendMessage({ action: "CHANGE_MUTE_TAB" });
 }
 
-function screenshot() {
-    chrome.runtime.sendMessage({ action: "SCREENSHOT" });
-}
+
