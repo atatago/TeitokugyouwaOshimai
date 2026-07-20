@@ -1,3 +1,44 @@
+function getMainFrame() {
+    return `
+        <div style="display: flex;">
+            <div id="display-fleet-info" class="display-box float-box">
+                <div><strong>🚢 編成:</strong></div>
+                <div id="fleet-info-list">
+                    <li>データ受信待ち...</li>
+                </div>
+            </div>
+            
+            <div class="float-box">
+                <div>
+                    <button class="func-button" title="サウンド" id="muteButton">🔊</button>
+                    <button class="func-button" title="スクリーンショット" id="screenshotButton">📷</button>
+                </div>
+
+                <div id="display-mission" class="display-box">
+                    <div><strong>🗺️ 遠征艦隊:</strong></div>
+                    <ul id="mission-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+
+                <div id="display-nyukyo" class="display-box">
+                    <div><strong>🛠️ 入渠ドック:</strong></div>
+                    <ul id="nyukyo-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+
+                <div id="quest-box" class="display-box">
+                    <div><strong>📋 任務:</strong></div>
+                    <ul id="quest-list" class="simple-list">
+                        <li>データ受信待ち...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 /**
  * 時間フォーマット
  * @param {*} totalSeconds 
@@ -157,7 +198,7 @@ function updateQuestList(questData) {
                             r.api_category === 5 ? '#FFFF00' :  //補給
                                 r.api_category === 6 ? '#D2691E' :  //工廠
                                     r.api_category === 7 ? '#dda0dd' :  //改装
-                                        r.api_category === 8 ? '#000000' :  //？？？？
+                                        r.api_category === 8 ? '#FF0000' :  //戦闘
                                             r.api_category === 9 ? '#FF0000' :  //戦闘
                                                 r.api_category === 10 ? '#FF0000' : //戦闘
                                                     r.api_category === 11 ? '#D2691E' : //工廠

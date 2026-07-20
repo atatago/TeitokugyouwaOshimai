@@ -42,158 +42,28 @@ function setupDisplayArea() {
 
         console.log('[Content Script] Setting up UI Display Area.');
 
+        const styleTag = document.createElement('style');
+        const cssUrl = chrome.runtime.getURL('teimai_style.css');
+        fetch(cssUrl).then(response => {
+            response.text()
+                .then(text => {
+                    styleTag.innerHTML = text;
+                });
+        });
+        document.body.appendChild(styleTag);
+
         const displayArea = document.createElement('div');
         displayArea.id = mainDisplayId;
+        displayArea.className = "main-frame";
 
         // Canvasの相対位置を計算
         const gameFrame = document.querySelector('iframe[id="game_frame"]');
         let topPosition = '10px';
         let rightPosition = '10px';
 
-        displayArea.style.cssText = `
-            position: fixed; /* スクロール追従のために固定 */
-            background-color:rgba(0,0,0,0.8); 
-            color:white; 
-            padding:15px; 
-            border-radius:8px; 
-            font-size:16px; 
-            width: 1200px; /* ゲーム画面の幅に合わせる */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: left;
-            z-index: 9999; /* 最前面に表示 */
-            inset: 0;
-            top: 821px; /* 仮の初期位置 */
-            margin: auto;
-        `;
-
-        displayArea.innerHTML = `
-            <style>
-                .float-box {
-                    float: left;
-                }
-                .flex-box {
-                    display: flex;
-                }
-                .display-box {
-                    padding: 0.1em;
-                    margin-bottom: 0.5em;
-                }
-                .simple-list{
-                    list-style: none;
-                    padding-left: 1em;
-                    margin: 0;
-                }
-                .quest-title { /* 任務 */
-                    font-size: smaller;
-                }
-                .quest-progress50 {
-                    background-color: #1ddd1d;
-                    padding: 0 0.2em;
-                }
-                .quest-progress80 {
-                    background-color: #1d991d;
-                    padding: 0 0.2em;
-                }
-                .quest-complete {
-                    background-color: #00bfff;
-                    padding: 0 0.2em;
-                }
-                .deck-box { /* 艦隊ボックス */
-                    width: 14em;
-                    margin-right: 0.3em;
-                }
-                .ship-box { /* 艦ボックス */
-                    border: 0.1em solid #555;
-                    padding: 0.3em;
-                    margin-bottom: 0.2em;
-                    border-radius: 0.2em;
-                }
-                .ship-info { /* 艦情報 */
-                    display: flex;
-                    font-weight: bold;
-                    margin-bottom: 0.1em;
-                    color: #fff;
-                }
-                .deck-battle{
-                    background-color: #ff0000;
-                    padding: 0 0.2em;
-                }
-                .deck-mission{
-                    background-color: #00bfff;
-                    padding: 0 0.2em;
-                }
-                .deck-charge{
-                    background-color: #D2691E;
-                    padding: 0 0.2em;
-                }
-                .ship-name { /* 艦名 */
-                    width: 16em;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .ship-cond { /* コンディション */
-                    display: inline-block;
-                    font-size: medium;
-                    width: 5em;
-                }
-                .ship-lv {
-                    display: inline-block;
-                    font-size: small;
-                    margin-right: auto;
-                }
-                .ship-hp {
-                    display: inline-block;
-                    font-size: smaller;
-                }
-                .ship-hp-bar-box {
-                    height: 0.3em;
-                    background-color: #333;
-                    border-radius: 0.2em;
-                }
-                .ship-hp-bar {
-                    height: 100%;
-                    border-radius: 0.2em;
-                }
-            </style>
-
-            <div style="display: flex;">
-                <div id="display-fleet-info" class="display-box float-box">
-                    <div><strong>🚢 編成:</strong></div>
-                    <div id="fleet-info-list">
-                        <li>データ受信待ち...</li>
-                    </div>
-                </div>
-                
-                <div class="float-box">
-                    <div id="display-mission" class="display-box">
-                        <div><strong>🗺️ 遠征艦隊:</strong></div>
-                        <ul id="mission-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-
-                    <div id="display-nyukyo" class="display-box">
-                        <div><strong>🛠️ 入渠ドック:</strong></div>
-                        <ul id="nyukyo-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-
-                    <div id="quest-box" class="display-box">
-                        <div><strong>📋 任務:</strong></div>
-                        <ul id="quest-list" class="simple-list">
-                            <li>データ受信待ち...</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
+        displayArea.innerHTML = getMainFrame();
         document.body.appendChild(displayArea);
-
-        window.addEventListener('scroll', updateDisplayPosition);
-        window.addEventListener('resize', updateDisplayPosition);
+        settingEvents();
 
         // 子要素 (nyukyo-list) の存在をポーリングで保証する
         const checkChildElements = () => {
@@ -237,16 +107,30 @@ function updateDisplayPosition() {
     const rect = gameFrame.getBoundingClientRect();
 
     // 画面下端からの距離を計算
-    let topPosition = rect.bottom - 125;
+    let topPosition = rect.bottom - 230;
 
     // 画面上端にUIが隠れるのを防ぐ処理
     if (topPosition < 10) {
         topPosition = 10; // 画面上端に固定
     }
-
-    // CSSを適用
     displayArea.style.top = `${topPosition}px`;
 }
+
+// 履歴操作の無効化（戻るを連打されると死ぬ）
+window.addEventListener('load', function() {
+    window.history.pushState(
+        { blocked: true }, 
+        document.title, 
+        window.location.href
+    );
+}, false);
+window.addEventListener('popstate', function(event) {
+    window.history.pushState(
+        { blocked: true }, 
+        document.title, 
+        window.location.href
+    );
+}, false);
 
 // 全フレームで実行されるメッセージリスナー ---
 // データ通信を行っているformは別オリジンなのでChromeの通信機能を使ってデータ送信する
@@ -274,150 +158,152 @@ if (window.top === window) {
 
     // chrome.runtimeからのメッセージを受信
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === "API_DATA_RECEIVED") {
-            const apiData = request.data;
-            const gameData = new GameData();
+        switch (request.action) {
+            case "API_DATA_RECEIVED":
+                const apiData = request.data;
+                const gameData = new GameData();
 
-            // UIの存在を待ってからデータ処理
-            setupDisplayArea().then(() => {
-                switch (apiData.path) {
-                    case 'api_start2/get_option_setting':
-                        updateDisplayPosition();
-                        break;
+                // UIの存在を待ってからデータ処理
+                setupDisplayArea().then(() => {
+                    switch (apiData.path) {
+                        case 'api_start2/get_option_setting':
+                            updateDisplayPosition();
+                            break;
 
-                    case 'api_start2/getData':
-                        // マスターデータ取得
-                        gameData.masterData = apiData.data.api_data;
-                        break;
+                        case 'api_start2/getData':
+                            // マスターデータ取得
+                            gameData.masterData = apiData.data.api_data;
+                            break;
 
-                    case 'api_port/port':
-                        // 艦隊情報取得
-                        port = apiData.data;
+                        case 'api_port/port':
+                            // 艦隊情報取得
+                            port = apiData.data;
 
-                        gameData.currentDeckData = port.api_data.api_deck_port;          //艦隊情報
-                        gameData.currentShipData = port.api_data.api_ship;               //艦情報
-                        gameData.currentNyukyoData = port.api_data.api_ndock;            //入渠情報
+                            gameData.currentDeckData = port.api_data.api_deck_port;          //艦隊情報
+                            gameData.currentShipData = port.api_data.api_ship;               //艦情報
+                            gameData.currentNyukyoData = port.api_data.api_ndock;            //入渠情報
 
-                        updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
-                        updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
-                        updateMissionUI(gameData.currentDeckData);
-                        break;
+                            updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
+                            updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
+                            updateMissionUI(gameData.currentDeckData);
+                            break;
 
-                    case 'api_req_hensei/change':
-                        // 編成変更
-                        henseiChange(port, apiData);
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
+                        case 'api_req_hensei/change':
+                            // 編成変更
+                            henseiChange(port, apiData);
+                            updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            break;
 
-                    case 'api_req_hensei/preset_select':
-                        // プリセット展開
-                        const deckIndex = port.api_data.api_deck_port.findIndex(r => r.api_id === apiData.data.api_data.api_id);
-                        port.api_data.api_deck_port[deckIndex].api_ship = apiData.data.api_data.api_ship;
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
+                        case 'api_req_hensei/preset_select':
+                            // プリセット展開
+                            const deckIndex = port.api_data.api_deck_port.findIndex(r => r.api_id === apiData.data.api_data.api_id);
+                            port.api_data.api_deck_port[deckIndex].api_ship = apiData.data.api_data.api_ship;
+                            updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/deck':
-                        //遠征
-                        gameData.currentDeckData = apiData.data.api_data;
-                        updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
-                        updateMissionUI(gameData.currentDeckData);
-                        break;
+                        case 'api_get_member/deck':
+                            //遠征
+                            gameData.currentDeckData = apiData.data.api_data;
+                            updateFleetInfoUI(gameData.currentDeckData, gameData.currentShipData, gameData.masterData);
+                            updateMissionUI(gameData.currentDeckData);
+                            break;
 
-                    case 'api_req_map/start':
-                        //戦闘
-                        const bp = paramToDict(apiData.requestBody);
-                        const deckId = parseInt(bp['api_deck_id']);
+                        case 'api_req_map/start':
+                            //戦闘
+                            const bp = paramToDict(apiData.requestBody);
+                            const deckId = parseInt(bp['api_deck_id']);
 
-                        gameData.isBattle = true;
-                        gameData.isBossBattle = false;
-                        gameData.battleCount = 0;
-                        //ship_deck のレスポンス形式に合わせて currentDeckData を作る
-                        gameData.currentDeckData.filter(r => r.api_id === deckId).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-
-                        gameData.battleDeckData = {
-                            "api_deck_data": gameData.currentDeckData,
-                            "api_ship_data": gameData.currentShipData,
-                        };
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_req_sortie/battle':
-                        //戦闘
-                        gameData.battleCount++;
-                        gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_get_member/ship_deck':
-                        //戦闘
-                        gameData.battleDeckData = apiData.data.api_data;
-                        gameData.battleDeckData.api_deck_data.map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
-
-                    case 'api_req_map/next':
-                        //戦闘
-                        if (apiData.data.api_data.api_bosscell_no === apiData.data.api_data.api_no) {
-                            gameData.isBattle = true;
-                            gameData.isBossBattle = true;
-                        } else {
                             gameData.isBattle = true;
                             gameData.isBossBattle = false;
-                        }
+                            gameData.battleCount = 0;
+                            //ship_deck のレスポンス形式に合わせて currentDeckData を作る
+                            gameData.currentDeckData.filter(r => r.api_id === deckId).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
 
-                        gameData.battleDeckData.api_deck_data.filter(r => r.isBattle !== undefined).map(r => {
-                            r.isBattle = gameData.isBattle;
-                            r.isBossBattle = gameData.isBossBattle;
-                            r.battleCount = gameData.battleCount;
-                        });
-                        updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
-                        break;
+                            gameData.battleDeckData = {
+                                "api_deck_data": gameData.currentDeckData,
+                                "api_ship_data": gameData.currentShipData,
+                            };
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/questlist':
-                        //任務
-                        updateQuestList(apiData);
-                        break;
+                        case 'api_req_sortie/battle':
+                            //戦闘
+                            gameData.battleCount++;
+                            gameData.battleDeckData.api_deck_data.filter(r => r.isBattle).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_get_member/ndock':
-                        //入渠
-                        gameData.currentNyukyoData = apiData.data.api_data;
-                        updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
-                        break;
+                        case 'api_get_member/ship_deck':
+                            //戦闘
+                            gameData.battleDeckData = apiData.data.api_data;
+                            gameData.battleDeckData.api_deck_data.map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
 
-                    case 'api_req_nyukyo/start':
-                        //入渠
-                        const p = paramToDict(apiData.requestBody);
-                        if (p['api_highspeed'] === '1') {
-                            //バケツ使用
-                            const s = port.api_data.api_ship.filter(r => r.api_id === parseInt(p['api_ship_id']))[0];
-                            s.api_nowhp = s.api_maxhp;
+                        case 'api_req_map/next':
+                            //戦闘
+                            if (apiData.data.api_data.api_bosscell_no === apiData.data.api_data.api_no) {
+                                gameData.isBattle = true;
+                                gameData.isBossBattle = true;
+                            } else {
+                                gameData.isBattle = true;
+                                gameData.isBossBattle = false;
+                            }
+
+                            gameData.battleDeckData.api_deck_data.filter(r => r.isBattle !== undefined).map(r => {
+                                r.isBattle = gameData.isBattle;
+                                r.isBossBattle = gameData.isBossBattle;
+                                r.battleCount = gameData.battleCount;
+                            });
+                            updateBattleResultUI(gameData.battleDeckData, gameData.masterData);
+                            break;
+
+                        case 'api_get_member/questlist':
+                            //任務
+                            updateQuestList(apiData);
+                            break;
+
+                        case 'api_get_member/ndock':
+                            //入渠
+                            gameData.currentNyukyoData = apiData.data.api_data;
+                            updateNyukyoUI(gameData.currentNyukyoData, gameData.currentShipData, gameData.masterData);
+                            break;
+
+                        case 'api_req_nyukyo/start':
+                            //入渠
+                            const p = paramToDict(apiData.requestBody);
+                            if (p['api_highspeed'] === '1') {
+                                //バケツ使用
+                                const s = port.api_data.api_ship.filter(r => r.api_id === parseInt(p['api_ship_id']))[0];
+                                s.api_nowhp = s.api_maxhp;
+                                updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
+                            }
+                            break;
+
+                        case 'api_req_hokyu/charge':
+                            //補給
+                            apiData.data.api_data.api_ship.forEach(charge => {
+                                const s = port.api_data.api_ship.filter(r => r.api_id === charge.api_id)[0];
+                                s.api_bull = charge.api_bull;
+                                s.api_fuel = charge.api_fuel;
+                            });
                             updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        }
-                        break;
-
-                    case 'api_req_hokyu/charge':
-                        //補給
-                        apiData.data.api_data.api_ship.forEach(charge => {
-                            const s = port.api_data.api_ship.filter(r => r.api_id === charge.api_id)[0];
-                            s.api_bull = charge.api_bull;
-                            s.api_fuel = charge.api_fuel;
-                        });
-                        updateFleetInfoUI(port.api_data.api_deck_port, port.api_data.api_ship, gameData.masterData);
-                        break;
-                }
-            });
+                            break;
+                    }
+                });
+                break;
         }
     });
 }
@@ -450,9 +336,9 @@ function updateNyukyoUI(ndocks, ships, masterData) {
                 const name = masterData.api_mst_ship.filter(s => s.api_id === ship.api_ship_id)[0].api_name;
 
                 if (remainingSeconds === 0) {
-                    html += `<li style="color: #4CAF50;">[${dock.api_id} : ✅ 完了！] : ${name}</li>`;
+                    html += `<li class="nyukyo" style="color: #4CAF50;">[${dock.api_id} : ✅ 完了！] : ${name}</li>`;
                 } else {
-                    html += `<li>[${dock.api_id} : ${remainingTimeStr}] : ${name}</li>`;
+                    html += `<li class="nyukyo">[${dock.api_id} : ${remainingTimeStr}] : ${name}</li>`;
                 }
                 break;
         }
@@ -489,9 +375,9 @@ function updateMissionUI(decks) {
                     sendMessage(title, message);
                     deck.api_mission[3] = 1;
                 }
-                html += `<li style="color: #4CAF50;">[${deck.api_id} : --:--:--]: ✅ 帰投！</li>`;
+                html += `<li class="mission" style="color: #4CAF50;">[${deck.api_id} : --:--:--]: ✅ 帰投！</li>`;
             } else {
-                html += `<li>[${deck.api_id} : ${remainingTimeStr}] : ⏳ ${deck.api_name}</li>`;
+                html += `<li class="mission">[${deck.api_id} : ${remainingTimeStr}] : ⏳ ${deck.api_name}</li>`;
             }
         } else {
             deck.api_mission[3] = 0;    //通知フラグ
@@ -557,4 +443,22 @@ function paramToDict(params) {
         dict[key] = value;
     });
     return dict;
+}
+
+function settingEvents() {
+    window.addEventListener('scroll', updateDisplayPosition);
+    window.addEventListener('resize', updateDisplayPosition);
+
+    const muteButton = document.getElementById('muteButton');
+    if(muteButton) muteButton.addEventListener('click', changeMute);
+    const screenshotButton = document.getElementById('screenshotButton');
+    if(screenshotButton) screenshotButton.addEventListener('click', screenshot);
+}
+
+function changeMute() {
+    chrome.runtime.sendMessage({ action: "CHANGE_MUTE_TAB" });
+}
+
+function screenshot() {
+    chrome.runtime.sendMessage({ action: "SCREENSHOT" });
 }
